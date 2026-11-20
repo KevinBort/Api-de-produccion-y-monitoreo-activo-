@@ -1,0 +1,21 @@
+# Versiones PROBADAS con Python 3.12 (la suite de tests pasa con estas).
+# API
+fastapi==0.165.0
+uvicorn[standard]==0.54.0
+httpx==0.28.1
+pydantic==2.14.3
+python-dotenv==1.2.4
+# Estado: Redis (jobs) + checkpoints de LangGraph (requiere redis-stack, ver README)
+redis==8.1.0
+langgraph==1.2.22
+langgraph-checkpoint-redis==0.6.0
+# Sistema multi-agente (M6)
+langchain-core==1.8.3
+langchain-google-genai==4.5.1
+langchain-ollama==1.1.0
+langchain-chroma==1.1.0
+chromadb==1.5.9
+# Observabilidad: Arize Phoenix vía OpenInference
+arize-phoenix-otel==0.17.3
+openinference-instrumentation==0.1.79
+openinference-instrumentation-langchain==0.1.87

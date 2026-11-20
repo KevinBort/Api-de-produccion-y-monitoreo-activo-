@@ -1,0 +1,43 @@
+# docker compose up --build
+#   API       -> http://localhost:8000/docs
+#   Phoenix   -> http://localhost:6006
+# Requisitos en TU máquina: Ollama con bge-m3 (embeddings) y un .env con GOOGLE_API_KEY.
+services:
+  redis:
+    # redis-stack incluye RedisJSON + RediSearch, que exige el checkpointer de LangGraph.
+    # Con la imagen `redis` a secas fallaría con errores de módulos.
+    image: redis/redis-stack-server:latest
+    ports: ["6379:6379"]
+    volumes: ["redis_data:/data"]      # los jobs y checkpoints sobreviven a un restart
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  phoenix:
+    image: arizephoenix/phoenix:latest
+    environment:
+      # Desde arize-phoenix 21 la imagen de Docker exige login y API key por defecto.
+      # En local lo desactivamos (el puerto solo se abre a esta máquina, ver abajo).
+      # Si prefieres dejar la autenticación activa, quita esta línea y pon PHOENIX_API_KEY en .env.
+      PHOENIX_ENABLE_AUTH: "false"
+    ports:
+      - "127.0.0.1:6006:6006"   # UI + colector HTTP (solo accesible desde esta máquina)
+
+  api:
+    build: .
+    env_file: .env
+    environment:                       # dentro de Docker los servicios se ven por nombre
+      REDIS_URL: redis://redis:6379/0
+      PHOENIX_COLLECTOR_ENDPOINT: http://phoenix:6006/v1/traces
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL_DOCKER:-http://host.docker.internal:11434}
+      CHECKPOINT_BACKEND: redis
+    extra_hosts: ["host.docker.internal:host-gateway"]   # alcanzar el Ollama del host (Linux)
+    ports: ["8010:8000"]
+    depends_on:
+      redis: {condition: service_healthy}
+      phoenix: {condition: service_started}
+
+volumes:
+  redis_data:
